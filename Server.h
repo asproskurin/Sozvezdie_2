@@ -19,10 +19,12 @@ public slots:
     void slotReadyRead();
 
 private:
-    QHash<qintptr, QTcpSocket*> sockets;
-    qint32 countRequest;
-    QTcpSocket* socket;
-    QThreadPool* threadPool;
+    std::chrono::nanoseconds getCurrentTime();
+    QHash<qintptr, QTcpSocket*> sockets_;
+    qint32 countRequest_;
+    QTcpSocket* socket_;
+    QThreadPool* threadPool_;
+    std::chrono::nanoseconds lastRequest_;
 };
 
 #endif // SERVER_H

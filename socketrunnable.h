@@ -6,15 +6,16 @@
 #include <QTime>
 #include <chrono>
 
-class socketRunnable : public QRunnable
+class SocketRunnable : public QRunnable
 {
 public:
-    socketRunnable(QTcpSocket* socket, qint16 countRequest,
+    SocketRunnable(qintptr socketDescriptor, qint16 countRequest,
                    std::chrono::nanoseconds requestTime);
     void run();
 
 private:
     QTcpSocket* socket_;
+    qintptr socketDescriptor_;
     qint16 countRequest_;
     std::chrono::nanoseconds requestTime_;
 };

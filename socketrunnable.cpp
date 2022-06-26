@@ -1,18 +1,20 @@
 #include "socketrunnable.h"
 
-socketRunnable::socketRunnable(QTcpSocket* socket, qint16 countRequest,
+SocketRunnable::SocketRunnable(qintptr socketDescriptor, qint16 countRequest,
                                std::chrono::nanoseconds requestTime)
-    : socket_(socket), countRequest_(countRequest), requestTime_(requestTime)
+    : socketDescriptor_(socketDescriptor), countRequest_(countRequest), requestTime_(requestTime)
 {
 
 }
 
-void socketRunnable::run()
+void SocketRunnable::run()
 {
-    socket_->waitForReadyRead();
-    qDebug() << socket_->readAll();
-
+    socket_ = new QTcpSocket;
+    socket_->setSocketDescriptor(socketDescriptor_);
     QString response = QString::number(countRequest_) + "; "
             + QString::number(requestTime_.count());
     socket_->write(response.toUtf8());
+    qDebug() << QString::number(countRequest_) << " send to " << socketDescriptor_;
+    socket_->close();
+    socket_->deleteLater();
 }
