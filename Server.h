@@ -17,6 +17,8 @@ public:
 public slots:
     void incomingConnection(qintptr socketDescriptor);
     void slotReadyRead();
+    void slotRequestAnswer(qintptr socketDescriptor, qint16 countRequest,
+                           std::chrono::nanoseconds requestTime);
 
 private:
     std::chrono::nanoseconds getCurrentTime();
@@ -25,6 +27,8 @@ private:
     QTcpSocket* socket_;
     QThreadPool* threadPool_;
     std::chrono::nanoseconds lastRequest_;
+    QByteArray data_;
+    QByteArray correctRequest_;
 };
 
 #endif // SERVER_H

@@ -1,10 +1,12 @@
 #include "Server.h"
-#include "socketrunnable.h"
+#include "socketthread.h"
+
 #include <chrono>
 
 Server::Server()
 {
     countRequest_ = 0;
+    correctRequest_ = "next";
     if (this->listen(QHostAddress::Any, 4242))
     {
         qDebug() << "Server start successfully";
@@ -13,8 +15,6 @@ Server::Server()
     {
         qDebug() << "Server start error";
     }
-    threadPool_ = new QThreadPool(this);
-    threadPool_->setMaxThreadCount(20);
 }
 
 Server::~Server()
@@ -26,6 +26,7 @@ Server::~Server()
 void Server::incomingConnection(qintptr socketDescriptor)
 {
     socket_ = new QTcpSocket;
+    lastRequest_ = getCurrentTime();
     socket_->setSocketDescriptor(socketDescriptor);
 
     connect(socket_, &QTcpSocket::readyRead, this, &Server::slotReadyRead);
@@ -45,9 +46,44 @@ void Server::slotReadyRead()
     std::chrono::nanoseconds lastRequest = nanoseconds - lastRequest_;
 
     socket_ = (QTcpSocket*)sender();
-    SocketRunnable* runnable = new SocketRunnable(socket_->socketDescriptor(), countRequest_++, lastRequest);
-    lastRequest_ = nanoseconds;
-    threadPool_->start(runnable);
+
+    QDataStream in(socket_);
+    in.setVersion(QDataStream::Qt_6_3);
+
+    if (in.status() == QDataStream::Ok)
+    {
+        data_.clear();
+        QString str;
+        in >> str;
+        if (str == correctRequest_)
+        {
+            SocketThread* thread = new SocketThread(socket_->socketDescriptor(), countRequest_);
+            connect(thread, &SocketThread::requestDone, this, &Server::slotRequestAnswer);
+            connect(thread, &SocketThread::finished, thread, &SocketThread::deleteLater);
+            thread->start();
+        }
+    }
+    else
+    {
+        qDebug() << "Data stream error";
+    }
+}
+
+void Server::slotRequestAnswer(qintptr socketDescriptor,
+                               qint16 countRequest, std::chrono::nanoseconds requestTime)
+{
+    socket_ = sockets_.value(socketDescriptor);
+    QString response = QString::number(countRequest_) + "; "
+            + QString::number((requestTime - lastRequest_).count());
+    QByteArray data;
+    data.clear();
+    QDataStream out(&data, QIODevice::WriteOnly);
+    out.setVersion(QDataStream::Qt_6_3);
+    out << response;
+    socket_->write(data);
+    qDebug() << QString::number(countRequest_) << " send to " << socketDescriptor;
+    lastRequest_ = requestTime;
+    countRequest_ = countRequest;
 }
 
 std::chrono::nanoseconds Server::getCurrentTime()

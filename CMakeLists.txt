@@ -11,8 +11,10 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-set(HEADERS socketrunnable.h Server.h)
-set(SRC main.cpp socketrunnable.cpp Server.cpp)
+# socketrunnable.h  socketrunnable.cpp
+
+set(HEADERS socketthread.h Server.h)
+set(SRC main.cpp socketthread.cpp Server.cpp)
 
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core)
